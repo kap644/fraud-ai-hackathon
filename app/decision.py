@@ -1,7 +1,8 @@
 def classify(confidence):
-    if confidence >= 0.80:
+    if confidence >= 0.90:
         return "Human"
-    elif confidence <= 0.45:
+    elif confidence <= 0.55:
         return "AI"
     else:
         return "Suspicious"
+
