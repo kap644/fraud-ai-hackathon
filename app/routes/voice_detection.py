@@ -45,7 +45,17 @@ async def voice_detect(request: Request, api_key=Depends(verify_api_key)):
         # ---------- Analyze audio ----------
         features = analyze_audio(audio_path)
         confidence = calculate_confidence(features)
-        label = classify(confidence)
+
+        # ---------- HARD OVERRIDE (VERY IMPORTANT) ----------
+        # Studio-clean / TTS-like voices (ElevenLabs etc.)
+        # should NEVER be marked as Human
+        if (
+            features["energy_variance"] < 0.03
+            and features["pitch_variance"] < 40
+        ):
+            label = "AI"
+        else:
+            label = classify(confidence)
 
         # ---------- Cleanup ----------
         os.remove(audio_path)
@@ -66,5 +76,6 @@ async def voice_detect(request: Request, api_key=Depends(verify_api_key)):
             "status": "error",
             "message": f"Processing failed: {str(e)}"
         }
+
 
 
