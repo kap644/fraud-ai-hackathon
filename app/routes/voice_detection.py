@@ -1,3 +1,4 @@
+print("### NEW VOICE DETECTION LOGIC ACTIVE ###")
 from fastapi import APIRouter, Depends, Request
 from app.auth import verify_api_key
 import base64
