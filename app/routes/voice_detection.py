@@ -1,4 +1,3 @@
-print("### NEW VOICE DETECTION LOGIC ACTIVE ###")
 from fastapi import APIRouter, Depends, Request
 from app.auth import verify_api_key
 import base64
@@ -7,7 +6,6 @@ import uuid
 
 from app.audio_analysis import analyze_audio
 from app.scoring import calculate_confidence
-from app.decision import classify
 
 router = APIRouter()
 
@@ -47,16 +45,19 @@ async def voice_detect(request: Request, api_key=Depends(verify_api_key)):
         features = analyze_audio(audio_path)
         confidence = calculate_confidence(features)
 
-        # ---------- HARD OVERRIDE (VERY IMPORTANT) ----------
-        # Studio-clean / TTS-like voices (ElevenLabs etc.)
-        # should NEVER be marked as Human
+        # ---------- FINAL FRAUD-SAFE DECISION ----------
+        # Default = AI (safe choice)
+        label = "AI"
+
+        # Strong human cues required
         if (
-            features["energy_variance"] < 0.03
-            and features["pitch_variance"] < 40
+            features["pitch_variance"] > 60
+            and features["energy_variance"] > 0.05
+            and features["silence_ratio"] > 0.15
         ):
-            label = "AI"
-        else:
-            label = classify(confidence)
+            label = "Human"
+        elif confidence > 0.75:
+            label = "Suspicious"
 
         # ---------- Cleanup ----------
         os.remove(audio_path)
@@ -77,6 +78,7 @@ async def voice_detect(request: Request, api_key=Depends(verify_api_key)):
             "status": "error",
             "message": f"Processing failed: {str(e)}"
         }
+
 
 
 
