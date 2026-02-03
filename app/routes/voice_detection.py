@@ -29,7 +29,7 @@ async def voice_detect(request: Request, api_key=Depends(verify_api_key)):
         return {"status": "error", "message": "Invalid input"}
 
     try:
-        # decode base64
+        # ---------- Decode base64 ----------
         audio_bytes = base64.b64decode(audio_base64)
 
         file_name = f"{uuid.uuid4()}.{audio_format}"
@@ -38,13 +38,18 @@ async def voice_detect(request: Request, api_key=Depends(verify_api_key)):
         with open(audio_path, "wb") as f:
             f.write(audio_bytes)
 
-        # 🔍 analyze audio
+        # ---------- Analyze audio ----------
         features = analyze_audio(audio_path)
         confidence = calculate_confidence(features)
 
-        # 🎯 Decision logic
-        label = classify(confidence)
+        # ---------- 🔥 AI-VOICE HEURISTIC (VERY IMPORTANT) ----------
+        # AI voices are too clean (low pitch variation)
+        if features.get("pitch_variation", 0) < 8:
+            label = "AI"
+        else:
+            label = classify(confidence)
 
+        # ---------- Cleanup ----------
         os.remove(audio_path)
 
         return {
@@ -54,6 +59,7 @@ async def voice_detect(request: Request, api_key=Depends(verify_api_key)):
                 "confidence": round(confidence, 2),
                 "language": language
             },
+            "analysis": features,
             "message": "Voice analyzed"
         }
 
@@ -62,6 +68,7 @@ async def voice_detect(request: Request, api_key=Depends(verify_api_key)):
             "status": "error",
             "message": f"Processing failed: {str(e)}"
         }
+
 
 
 
